@@ -1,0 +1,134 @@
+@import 'tailwindcss';
+
+:root {
+  --bg: #09090b;
+  --bg-elevated: #121214;
+  --panel: rgba(255, 255, 255, 0.04);
+  --panel-strong: rgba(255, 255, 255, 0.07);
+  --ink: #f5f5f2;
+  --muted: #8e8e89;
+  --line: rgba(255, 255, 255, 0.1);
+  --accent: #7dd3fc;
+  --accent-ink: #041016;
+  --radius: 14px;
+  --font: 'DM Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --display: 'Syne', 'DM Sans', sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  font-family: var(--font);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(900px 480px at 12% -8%, rgba(125, 211, 252, 0.12), transparent 55%),
+    radial-gradient(700px 420px at 88% 0%, rgba(255, 255, 255, 0.04), transparent 50%),
+    var(--bg);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.stage-frame {
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 4px);
+  background: #000;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+.ui-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  backdrop-filter: blur(14px);
+}
+
+.ui-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ui-input,
+.ui-select,
+.ui-textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  outline: none;
+}
+
+.ui-input:focus,
+.ui-select:focus,
+.ui-textarea:focus {
+  border-color: color-mix(in oklab, var(--accent) 70%, white);
+}
+
+.tag-pill {
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  transition: 160ms ease;
+}
+
+.tag-pill:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.tag-pill.is-active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn-ghost {
+  background: var(--panel-strong);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.display {
+  font-family: var(--display);
+  letter-spacing: -0.03em;
+}
