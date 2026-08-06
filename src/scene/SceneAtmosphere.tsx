@@ -18,11 +18,9 @@ export function SceneAtmosphere({
       <fog attach="fog" args={[bg.fogColor, bg.fogNear, bg.fogFar]} />
       <ambientLight intensity={bg.ambient} />
       <directionalLight
-        castShadow
         position={[4, 8, 3]}
         intensity={bg.keyIntensity}
         color={bg.keyLight}
-        shadow-mapSize={[1024, 1024]}
       />
       <hemisphereLight
         intensity={0.25}

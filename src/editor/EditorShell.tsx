@@ -12,7 +12,6 @@ import {
   TEXT_WEIGHT_OPTIONS,
   type TextFontId,
 } from '../model/textStyles'
-import { listCharacters } from '../model/characters'
 import { TEMPLATES } from '../model/templates'
 import { MAX_CUSTOM_PAGES } from '../model/defaults'
 import {
@@ -23,7 +22,6 @@ import {
   type BackgroundPresetId,
   type BleedStyleId,
   type CameraPresetId,
-  type CharacterId,
   type EnterAnim,
   type ExitAnim,
   type ImageCardEnterAnim,
@@ -68,7 +66,6 @@ export function EditorShell() {
   const setPageCameraTweaks = useProjectStore((s) => s.setPageCameraTweaks)
   const setBackgroundPreset = useProjectStore((s) => s.setBackgroundPreset)
   const setBleedStyleId = useProjectStore((s) => s.setBleedStyleId)
-  const setCharacterId = useProjectStore((s) => s.setCharacterId)
   const setTemplate = useProjectStore((s) => s.setTemplate)
   const setThemePrimary = useProjectStore((s) => s.setThemePrimary)
   const setTitle = useProjectStore((s) => s.setTitle)
@@ -168,20 +165,10 @@ export function EditorShell() {
         </div>
 
         <div>
-          <p className="ui-label mb-1">形象 Look</p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {listCharacters().map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                className={`tag-pill text-left ${project.characterId === c.id ? 'is-active' : ''}`}
-                onClick={() => setCharacterId(c.id as CharacterId)}
-              >
-                <div className="font-semibold tracking-normal">{c.label}</div>
-                <div className="mt-0.5 text-[0.65rem] opacity-80">{c.blurb}</div>
-              </button>
-            ))}
-          </div>
+          <p className="ui-label mb-1">形象</p>
+          <p className="mono rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--bg-elevated)] px-3 py-2 text-xs text-[var(--body)]">
+            Chao · 自定义形象
+          </p>
         </div>
 
         <div>
@@ -221,7 +208,7 @@ export function EditorShell() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="ui-label">动画简历制作器</p>
-            <h1 className="display text-2xl font-bold md:text-3xl">
+            <h1 className="display text-2xl md:text-3xl">
               Tap a tag, camera flies
             </h1>
             <p className="mt-1 max-w-xl text-sm text-[var(--muted)]">
@@ -231,14 +218,14 @@ export function EditorShell() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className={`btn ${editMode ? 'btn-primary' : 'btn-ghost'}`}
+              className={`btn ${editMode ? 'btn-ink' : 'btn-ghost'}`}
               onClick={() => setEditMode(true)}
             >
               编辑
             </button>
             <button
               type="button"
-              className={`btn ${!editMode ? 'btn-primary' : 'btn-ghost'}`}
+              className={`btn ${!editMode ? 'btn-ink' : 'btn-ghost'}`}
               onClick={() => setEditMode(false)}
             >
               预览
@@ -246,7 +233,7 @@ export function EditorShell() {
             <button type="button" className="btn btn-ghost" disabled={isTransitioning || idx <= 0} onClick={goPrevPage}>
               上一页
             </button>
-            <button type="button" className="btn btn-primary" disabled={isTransitioning || idx >= pages.length - 1} onClick={goNextPage}>
+            <button type="button" className="btn btn-ghost" disabled={isTransitioning || idx >= pages.length - 1} onClick={goNextPage}>
               下一页
             </button>
             <button
@@ -693,7 +680,7 @@ export function EditorShell() {
           </button>
         </div>
         <p className="mb-2 text-[0.65rem] leading-snug text-[var(--muted)]">
-          Amicro A1–A12 布局；悬停展开或点击切换。可粘贴链接或本地上传（≤500KB）。
+          Amicro A1–A12 布局。编辑模式：拖动卡片移动；拖四角橙色手柄等比缩放。每张可填链接或上传本地图（≤500KB）。
         </p>
 
         <div className="flex flex-wrap gap-1">
@@ -828,7 +815,7 @@ export function EditorShell() {
                     <input
                       className="ui-input mt-1"
                       value={card.src.startsWith('data:') ? '' : card.src}
-                      placeholder="https://..."
+                      placeholder="https://... 粘贴网络图片地址"
                       onChange={(e) =>
                         updateImageCard(page.id, selectedImageGroup.id, card.id, {
                           src: e.target.value,
@@ -836,28 +823,41 @@ export function EditorShell() {
                       }
                     />
                   </label>
-                  <label className="mt-2 block text-sm">
-                    <span className="ui-label">本地上传</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="mt-1 block w-full text-xs text-[var(--muted)]"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0]
-                        if (!file) return
-                        const dataUrl = await readImageDataUrl(file)
-                        if (dataUrl) {
-                          updateImageCard(
-                            page.id,
-                            selectedImageGroup.id,
-                            card.id,
-                            { src: dataUrl },
-                          )
-                        }
-                        e.target.value = ''
-                      }}
-                    />
-                  </label>
+                  <div className="mt-2">
+                    <p className="ui-label mb-1">本地上传</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="btn btn-ghost relative inline-flex cursor-pointer text-xs">
+                        选择本地图片
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/gif"
+                          className="absolute inset-0 cursor-pointer opacity-0"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0]
+                            if (!file) return
+                            const dataUrl = await readImageDataUrl(file)
+                            if (dataUrl) {
+                              updateImageCard(
+                                page.id,
+                                selectedImageGroup.id,
+                                card.id,
+                                { src: dataUrl },
+                              )
+                            }
+                            e.target.value = ''
+                          }}
+                        />
+                      </label>
+                      {card.src.startsWith('data:') ? (
+                        <span className="text-[0.65rem] text-[var(--muted)]">
+                          已使用本地图片
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-[0.6rem] text-[var(--muted)]">
+                      支持 JPG / PNG / WebP / GIF，单张 ≤ 500KB
+                    </p>
+                  </div>
                   {card.src ? (
                     <img
                       src={card.src}

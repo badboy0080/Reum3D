@@ -33,7 +33,6 @@ function MouseLeftIcon() {
         strokeWidth="1.2"
         opacity="0.5"
       />
-      {/* left button filled */}
       <path
         d="M2.4 2.6C2.4 2.05 2.85 1.6 3.4 1.6H8V8.1H2.4V2.6Z"
         fill="currentColor"
@@ -50,7 +49,7 @@ function PanIcon() {
       viewBox="0 0 14 14"
       fill="none"
       aria-hidden
-      className="shrink-0 text-[#b6f26e]"
+      className="shrink-0 text-[var(--primary)]"
     >
       <path
         d="M7 1.2V12.8M1.2 7H12.8M7 1.2L5.2 3M7 1.2L8.8 3M7 12.8L5.2 11M7 12.8L8.8 11M1.2 7L3 5.2M1.2 7L3 8.8M12.8 7L11 5.2M12.8 7L11 8.8"
@@ -63,7 +62,7 @@ function PanIcon() {
   )
 }
 
-/** Floating camera-control hint, styled like the reference pill bar. */
+/** Floating camera-control hint — hairline pill, no shadow. */
 export function CameraHintBar() {
   const [visible, setVisible] = useState(false)
 
@@ -89,7 +88,7 @@ export function CameraHintBar() {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-3">
       <div
-        className="pointer-events-auto flex max-w-full items-center gap-2.5 rounded-full border border-white/10 bg-[#1a1b1d]/95 px-3.5 py-2 text-[12px] text-[#c8c8c4] shadow-[0_10px_40px_rgba(0,0,0,0.45)] backdrop-blur-md sm:gap-3 sm:px-4 sm:text-[13px]"
+        className="pointer-events-auto mono flex max-w-full items-center gap-2.5 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--panel)] px-3.5 py-2 text-[12px] text-[var(--body)] sm:gap-3 sm:px-4 sm:text-[13px]"
         role="note"
         aria-label="Camera controls hint"
       >
@@ -98,17 +97,17 @@ export function CameraHintBar() {
           <span>Drag to rotate</span>
         </span>
 
-        <span className="text-white/25" aria-hidden>
+        <span className="text-[var(--muted)]" aria-hidden>
           ·
         </span>
 
         <span className="whitespace-nowrap">Scroll to zoom</span>
 
-        <span className="text-white/25" aria-hidden>
+        <span className="text-[var(--muted)]" aria-hidden>
           ·
         </span>
 
-        <span className="flex items-center gap-1.5 rounded-full bg-[#2a3320] px-2.5 py-1 font-medium text-white whitespace-nowrap">
+        <span className="flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--panel-strong)] px-2.5 py-1 font-medium text-[var(--ink)] whitespace-nowrap">
           <PanIcon />
           <span>Middle-drag to pan (orbit center stays)</span>
         </span>
@@ -116,7 +115,7 @@ export function CameraHintBar() {
         <button
           type="button"
           onClick={dismiss}
-          className="ml-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#8a8a86] transition hover:bg-white/10 hover:text-white"
+          className="ml-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--radius-btn)] text-[var(--muted)] transition hover:bg-[var(--panel-strong)] hover:text-[var(--ink)]"
           aria-label="关闭说明"
           title="关闭"
         >

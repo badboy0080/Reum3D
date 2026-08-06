@@ -1,11 +1,84 @@
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { SkeletonUtils } from 'three-stdlib'
-import type { Group } from 'three'
+import * as THREE from 'three'
+import type { Group, Object3D, Texture } from 'three'
 import { CHARACTERS } from '../model/characters'
 import { fitCharacterRoot, pickIdleClip } from '../model/fitCharacter'
-import { useProjectStore } from '../store/projectStore'
-import type { CharacterId } from '../model/types'
+
+/** Cap GPU texture size so large Chao maps don't blow WebGL memory. */
+const MAX_TEX = 1024
+
+function downscaleTexture(tex: Texture | null | undefined) {
+  if (!tex?.image) return
+  const img = tex.image as {
+    width?: number
+    height?: number
+    close?: () => void
+  }
+  const w = img.width ?? 0
+  const h = img.height ?? 0
+  if (!w || !h || (w <= MAX_TEX && h <= MAX_TEX)) {
+    tex.anisotropy = 1
+    tex.generateMipmaps = true
+    tex.minFilter = THREE.LinearMipmapLinearFilter
+    tex.magFilter = THREE.LinearFilter
+    return
+  }
+  const scale = MAX_TEX / Math.max(w, h)
+  const nw = Math.max(1, Math.round(w * scale))
+  const nh = Math.max(1, Math.round(h * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = nw
+  canvas.height = nh
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  ctx.drawImage(img as CanvasImageSource, 0, 0, nw, nh)
+  if (typeof img.close === 'function') {
+    try {
+      img.close()
+    } catch {
+      /* ignore */
+    }
+  }
+  tex.image = canvas
+  tex.anisotropy = 1
+  tex.generateMipmaps = true
+  tex.minFilter = THREE.LinearMipmapLinearFilter
+  tex.magFilter = THREE.LinearFilter
+  tex.needsUpdate = true
+}
+
+function prepareModelForGpu(root: Object3D) {
+  const seen = new Set<Texture>()
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh
+    if (!mesh.isMesh) return
+    const mats = Array.isArray(mesh.material)
+      ? mesh.material
+      : [mesh.material]
+    for (const mat of mats) {
+      if (!mat || typeof mat !== 'object') continue
+      const record = mat as unknown as Record<string, unknown>
+      for (const key of [
+        'map',
+        'normalMap',
+        'roughnessMap',
+        'metalnessMap',
+        'aoMap',
+        'emissiveMap',
+        'bumpMap',
+        'displacementMap',
+      ]) {
+        const tex = record[key] as Texture | undefined
+        if (tex && !seen.has(tex)) {
+          seen.add(tex)
+          downscaleTexture(tex)
+        }
+      }
+    }
+  })
+}
 
 function CharacterModel({
   url,
@@ -22,6 +95,7 @@ function CharacterModel({
   useLayoutEffect(() => {
     const root = group.current
     if (!root) return
+    prepareModelForGpu(clone)
     fitCharacterRoot(root)
   }, [clone, yaw])
 
@@ -48,7 +122,7 @@ function CharacterModel({
 
 function CharacterFallback() {
   return (
-    <mesh position={[0, 1, 0]} castShadow>
+    <mesh position={[0, 1, 0]}>
       <capsuleGeometry args={[0.35, 0.9, 6, 12]} />
       <meshStandardMaterial color="#8a8a86" roughness={0.7} />
     </mesh>
@@ -56,10 +130,7 @@ function CharacterFallback() {
 }
 
 export function GlbCharacter() {
-  const characterId = useProjectStore(
-    (s) => s.project.characterId,
-  ) as CharacterId
-  const look = CHARACTERS[characterId] ?? CHARACTERS.chao
+  const look = CHARACTERS.chao
 
   return (
     <group>
@@ -68,10 +139,4 @@ export function GlbCharacter() {
       </Suspense>
     </group>
   )
-}
-
-// Skip preloading the custom Chao model (~57MB) — load on demand when selected.
-for (const c of Object.values(CHARACTERS)) {
-  if (c.id === 'chao') continue
-  useGLTF.preload(c.glbUrl)
 }

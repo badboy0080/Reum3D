@@ -27,14 +27,6 @@ export function fitCharacterRoot(
   root.position.x = -(fitted.min.x + fitted.max.x) / 2
   root.position.z = -(fitted.min.z + fitted.max.z) / 2
   root.position.y = -fitted.min.y
-
-  root.traverse((obj) => {
-    const mesh = obj as THREE.Mesh
-    if (mesh.isMesh) {
-      mesh.castShadow = true
-      mesh.receiveShadow = true
-    }
-  })
 }
 
 /** Prefer an idle / stand clip; otherwise first animation. */

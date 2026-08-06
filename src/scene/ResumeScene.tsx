@@ -21,7 +21,15 @@ function SceneBody() {
         presetId={page.backgroundPresetId ?? 'night-ink'}
       />
       <GlbCharacter />
-      <ContactShadows opacity={0.35} scale={10} blur={2.4} far={4} />
+      {/* ContactShadows 自带模糊贴图，不走 WebGLShadowMap，避免 PCFSoft 弃用刷屏 */}
+      <ContactShadows
+        opacity={0.28}
+        scale={8}
+        blur={1.8}
+        far={3.5}
+        resolution={256}
+        frames={1}
+      />
       <CameraRig pageId={page.id} pose={page.camera} />
       <CameraPanZoomControls pageId={page.id} />
     </>
@@ -38,9 +46,15 @@ export function ResumeScene() {
   return (
     <div className="stage-frame relative h-full w-full overflow-hidden">
       <Canvas
-        shadows
+        // 不启用 WebGL shadow map，避免 Three r185+ 对 PCFSoftShadowMap 每帧警告
+        shadows={false}
         camera={{ fov: 40, near: 0.1, far: 100, position: [0, 1.4, 3.2] }}
-        dpr={[1, 1.5]}
+        dpr={1}
+        gl={{
+          antialias: true,
+          powerPreference: 'high-performance',
+          stencil: false,
+        }}
       >
         <SceneBody />
       </Canvas>

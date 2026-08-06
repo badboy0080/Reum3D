@@ -1,0 +1,19 @@
+---
+description: Design system — read DESIGN.md before generating UI
+globs:
+  - "**/*.tsx"
+  - "**/*.css"
+  - "**/*.html"
+alwaysApply: false
+---
+
+Before generating or restyling UI, read `DESIGN.md` at the project root.
+
+Rules:
+- Keep the **dark** editor chrome (option 2 adaptation).
+- Primary CTA color is Cursor Orange `#f54e00` (`--primary`) only — use scarcely.
+- Hairline borders only; no drop shadows on panels or stage frame.
+- Button radius 8px; panel radius 12px.
+- Typography: Inter (display weight 400) + JetBrains Mono for tag/code-like UI.
+- Do not invent new brand colors or use timeline pastels as system button colors.
+- Theme `primary` may tint secondary accents (active tags); do not replace `--primary` CTA.

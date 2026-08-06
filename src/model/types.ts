@@ -18,7 +18,7 @@ export type ExitAnim = 'fade-out' | 'slide-down' | 'none'
 
 export type TextAlign = 'left' | 'center' | 'right'
 
-export type CharacterId = 'classic' | 'robot' | 'soldier' | 'xbot' | 'chao'
+export type CharacterId = 'chao'
 
 export type TemplateId = 'narrative' | 'showcase'
 

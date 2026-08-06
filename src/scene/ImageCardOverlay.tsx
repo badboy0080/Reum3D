@@ -6,6 +6,17 @@ import { isSlideLayout, resolveCardPose } from '../model/imageCardLayouts'
 import { BLEED_INSET_PX } from '../model/bleedStyles'
 import { useProjectStore } from '../store/projectStore'
 
+/** Default layout.w used as scale baseline (see imageCardGroup defaults). */
+const BASE_LAYOUT_W = 28
+const MIN_W = 18
+const MAX_W = 55
+
+type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se'
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n))
+}
+
 function clampInsideBleed(
   x: number,
   y: number,
@@ -195,6 +206,9 @@ function CardStack({
   )
 }
 
+const HANDLE_CLASS =
+  'pointer-events-auto absolute z-30 h-3 w-3 rounded-sm border border-white bg-[var(--primary)] shadow-none'
+
 function ImageCardGroupView({
   group,
   primary,
@@ -215,6 +229,7 @@ function ImageCardGroupView({
   )
   const setSelectedImageGroupId = useProjectStore((s) => s.setSelectedImageGroupId)
   const updateImageGroupLayout = useProjectStore((s) => s.updateImageGroupLayout)
+
   const drag = useRef<{
     startX: number
     startY: number
@@ -222,9 +237,24 @@ function ImageCardGroupView({
     origY: number
   } | null>(null)
 
+  const resize = useRef<{
+    handle: ResizeHandle
+    startX: number
+    startY: number
+    origX: number
+    origY: number
+    origW: number
+    vw: number
+    vh: number
+  } | null>(null)
+
   useEffect(() => {
     setActiveIndex(Math.floor((group.cards.length - 1) / 2))
   }, [group.cards.length, group.layoutKind])
+
+  const slide = isSlideLayout(group.layoutKind)
+  const scale = group.layout.w / BASE_LAYOUT_W
+  const showHandles = editable && selected
 
   useEffect(() => {
     const el = ref.current
@@ -233,8 +263,8 @@ function ImageCardGroupView({
     if (group.enter === 'zoom-in') {
       gsap.fromTo(
         el,
-        { autoAlpha: 0, scale: 0.86 },
-        { autoAlpha: 1, scale: 1, duration: 0.5, ease: 'power2.out' },
+        { autoAlpha: 0 },
+        { autoAlpha: 1, duration: 0.5, ease: 'power2.out' },
       )
     } else {
       gsap.fromTo(
@@ -251,19 +281,107 @@ function ImageCardGroupView({
     }
   }, [pageId, group.id, group.enter, group.exit])
 
-  const slide = isSlideLayout(group.layoutKind)
+  const startResize = (handle: ResizeHandle, e: React.PointerEvent) => {
+    if (!editable) return
+    e.stopPropagation()
+    e.preventDefault()
+    setSelectedImageGroupId(group.id)
+    const el = ref.current
+    const parentEl = el?.parentElement
+    if (!el || !parentEl) return
+    const parent = parentEl.getBoundingClientRect()
+    const card = el.getBoundingClientRect()
+    resize.current = {
+      handle,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: group.layout.x,
+      origY: group.layout.y,
+      origW: group.layout.w,
+      vw: (card.width / parent.width) * 100,
+      vh: (card.height / parent.height) * 100,
+    }
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }
+
+  const onResizeMove = (e: React.PointerEvent) => {
+    if (!resize.current) return
+    const parentEl = ref.current?.parentElement
+    if (!parentEl) return
+    const parent = parentEl.getBoundingClientRect()
+    const { handle, startX, startY, origX, origY, origW, vw, vh } =
+      resize.current
+
+    const dxPct = ((e.clientX - startX) / parent.width) * 100
+    const dyPct = ((e.clientY - startY) / parent.height) * 100
+
+    // Use the dominant axis so drag feels stable; keep aspect via uniform w.
+    const signed =
+      handle === 'se' || handle === 'ne'
+        ? Math.abs(dxPct) >= Math.abs(dyPct)
+          ? dxPct
+          : dyPct * (handle === 'ne' ? -1 : 1)
+        : Math.abs(dxPct) >= Math.abs(dyPct)
+          ? -dxPct
+          : handle === 'nw'
+            ? -dyPct
+            : dyPct
+
+    const newW = clamp(origW + signed, MIN_W, MAX_W)
+    const ratio = newW / origW
+    const newVw = vw * ratio
+    const newVh = vh * ratio
+
+    let nextX = origX
+    let nextY = origY
+    if (handle === 'se') {
+      nextX = origX
+      nextY = origY
+    } else if (handle === 'sw') {
+      nextX = origX + (vw - newVw)
+      nextY = origY
+    } else if (handle === 'ne') {
+      nextX = origX
+      nextY = origY + (vh - newVh)
+    } else {
+      nextX = origX + (vw - newVw)
+      nextY = origY + (vh - newVh)
+    }
+
+    const minX = (BLEED_INSET_PX / parent.width) * 100
+    const minY = (BLEED_INSET_PX / parent.height) * 100
+    const maxX = Math.max(minX, 100 - minX - newVw)
+    const maxY = Math.max(minY, 100 - minY - newVh)
+
+    updateImageGroupLayout(pageId, group.id, {
+      w: newW,
+      x: clamp(nextX, minX, maxX),
+      y: clamp(nextY, minY, maxY),
+    })
+  }
+
+  const endResize = (e: React.PointerEvent) => {
+    resize.current = null
+    try {
+      ;(e.target as HTMLElement).releasePointerCapture(e.pointerId)
+    } catch {
+      /* ignore */
+    }
+  }
 
   return (
     <div
       ref={ref}
       role={editable ? 'button' : undefined}
       tabIndex={editable ? 0 : undefined}
-      className={`image-card-group absolute ${editable ? 'pointer-events-auto cursor-grab active:cursor-grabbing' : 'pointer-events-auto'}`}
+      className={`image-card-group absolute ${
+        editable ? 'pointer-events-auto cursor-grab active:cursor-grabbing' : 'pointer-events-auto'
+      }`}
       style={{
         left: `${group.layout.x}%`,
         top: `${group.layout.y}%`,
-        width: `${group.layout.w}%`,
-        minWidth: '8rem',
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
         boxShadow: selected ? `0 0 0 1px ${primary}` : 'none',
         borderRadius: 4,
       }}
@@ -275,6 +393,7 @@ function ImageCardGroupView({
       }}
       onPointerDown={(e) => {
         if (!editable) return
+        if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
         if ((e.target as HTMLElement).closest('button')) return
         e.stopPropagation()
         setSelectedImageGroupId(group.id)
@@ -287,6 +406,10 @@ function ImageCardGroupView({
         e.currentTarget.setPointerCapture(e.pointerId)
       }}
       onPointerMove={(e) => {
+        if (resize.current) {
+          onResizeMove(e)
+          return
+        }
         if (!editable || !drag.current) return
         const parentEl = e.currentTarget.parentElement
         if (!parentEl) return
@@ -303,6 +426,10 @@ function ImageCardGroupView({
         updateImageGroupLayout(pageId, group.id, next)
       }}
       onPointerUp={(e) => {
+        if (resize.current) {
+          endResize(e)
+          return
+        }
         drag.current = null
         try {
           e.currentTarget.releasePointerCapture(e.pointerId)
@@ -317,6 +444,39 @@ function ImageCardGroupView({
         activeIndex={activeIndex}
         onActiveIndex={setActiveIndex}
       />
+
+      {showHandles ? (
+        <>
+          <div
+            data-resize-handle
+            className={`${HANDLE_CLASS} -left-1.5 -top-1.5 cursor-nwse-resize`}
+            onPointerDown={(e) => startResize('nw', e)}
+            onPointerMove={onResizeMove}
+            onPointerUp={endResize}
+          />
+          <div
+            data-resize-handle
+            className={`${HANDLE_CLASS} -right-1.5 -top-1.5 cursor-nesw-resize`}
+            onPointerDown={(e) => startResize('ne', e)}
+            onPointerMove={onResizeMove}
+            onPointerUp={endResize}
+          />
+          <div
+            data-resize-handle
+            className={`${HANDLE_CLASS} -bottom-1.5 -left-1.5 cursor-nesw-resize`}
+            onPointerDown={(e) => startResize('sw', e)}
+            onPointerMove={onResizeMove}
+            onPointerUp={endResize}
+          />
+          <div
+            data-resize-handle
+            className={`${HANDLE_CLASS} -bottom-1.5 -right-1.5 cursor-nwse-resize`}
+            onPointerDown={(e) => startResize('se', e)}
+            onPointerMove={onResizeMove}
+            onPointerUp={endResize}
+          />
+        </>
+      ) : null}
     </div>
   )
 }

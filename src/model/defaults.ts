@@ -197,9 +197,9 @@ function createNarrativeProject(): Project {
     templateId: 'narrative',
     bleedStyleId: 'corner-gold',
     theme: {
-      primary: '#7dd3fc',
-      background: '#0a0a0b',
-      fontFamily: '"DM Sans", "PingFang SC", "Microsoft YaHei", sans-serif',
+      primary: '#f54e00',
+      background: '#0c0c0b',
+      fontFamily: '"Inter", "PingFang SC", "Microsoft YaHei", sans-serif',
     },
     pages,
   }
@@ -213,7 +213,7 @@ function createShowcaseProject(): Project {
     templateId: 'showcase',
     theme: {
       ...base.theme,
-      primary: '#a5f3fc',
+      primary: '#f54e00',
     },
     pages: base.pages.map((p) => {
       const withBg = {

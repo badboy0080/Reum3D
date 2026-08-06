@@ -232,7 +232,10 @@ function mountImageGroups(page) {
     wrap.className = 'image-card-group';
     wrap.style.left = group.layout.x + '%';
     wrap.style.top = group.layout.y + '%';
-    wrap.style.width = group.layout.w + '%';
+    var baseW = 28;
+    var layoutW = group.layout.w || baseW;
+    wrap.style.transform = 'scale(' + (layoutW / baseW) + ')';
+    wrap.style.transformOrigin = 'top left';
     const stack = document.createElement('div');
     const kind = group.layoutKind;
     const slide = isSlideLayout(kind);
